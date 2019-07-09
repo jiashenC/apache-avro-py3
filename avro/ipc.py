@@ -126,7 +126,6 @@ class BaseRequestor(object, metaclass=abc.ABCMeta):
         """Returns: the underlying channel used by this requestor."""
         return self._transceiver
 
-    @time_logger
     @abc.abstractmethod
     def _IssueRequest(self, call_request, message_name, request_datum):
         """TODO: Document this method.
@@ -310,6 +309,7 @@ class BaseRequestor(object, metaclass=abc.ABCMeta):
 class Requestor(BaseRequestor):
     """Concrete requestor implementation."""
 
+    @time_logger
     def _IssueRequest(self, call_request, message_name, request_datum):
         call_response = self.transceiver.Transceive(call_request)
 
@@ -346,6 +346,7 @@ class Responder(object, metaclass=abc.ABCMeta):
     def set_protocol_cache(self, hash, protocol):
         self._protocol_cache[hash] = protocol
 
+    @time_logger
     def Respond(self, call_request):
         """Entry point to process one procedure call.
 
@@ -413,6 +414,7 @@ class Responder(object, metaclass=abc.ABCMeta):
             self._WriteError(SYSTEM_ERROR_SCHEMA, error, buffer_encoder)
         return buffer_writer.getvalue()
 
+    @time_logger
     def _ProcessHandshake(self, decoder, encoder):
         """Processes an RPC handshake.
 
@@ -470,14 +472,17 @@ class Responder(object, metaclass=abc.ABCMeta):
         """
         raise Exception('abtract method')
 
+    @time_logger
     def _ReadRequest(self, writer_schema, reader_schema, decoder):
         datum_reader = avro_io.DatumReader(writer_schema, reader_schema)
         return datum_reader.read(decoder)
 
+    @time_logger
     def _WriteResponse(self, writer_schema, response_datum, encoder):
         datum_writer = avro_io.DatumWriter(writer_schema)
         datum_writer.write(response_datum, encoder)
 
+    @time_logger
     def _WriteError(self, writer_schema, error_exception, encoder):
         datum_writer = avro_io.DatumWriter(writer_schema)
         datum_writer.write(str(error_exception), encoder)
@@ -578,7 +583,6 @@ class Transceiver(object, metaclass=abc.ABCMeta):
     def remote_name(self):
         pass
 
-    @time_logger
     @abc.abstractmethod
     def ReadMessage(self):
         """Reads a single message from the channel.
@@ -590,7 +594,6 @@ class Transceiver(object, metaclass=abc.ABCMeta):
         """
         pass
 
-    @time_logger
     @abc.abstractmethod
     def WriteMessage(self, message):
         """Writes a message into the channel.
@@ -645,6 +648,7 @@ class HTTPTransceiver(Transceiver):
     def remote_name(self):
         return self._remote_name
 
+    @time_logger
     def ReadMessage(self):
         response = self._conn.getresponse()
         response_reader = FramedReader(response)
@@ -652,6 +656,7 @@ class HTTPTransceiver(Transceiver):
         response.read()  # ensure we're ready for subsequent requests
         return framed_message
 
+    @time_logger
     def WriteMessage(self, message):
         req_method = 'POST'
         req_headers = {'Content-Type': AVRO_RPC_MIME}
