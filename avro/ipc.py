@@ -490,6 +490,7 @@ class FramedReader(object):
     def __init__(self, reader):
         self._reader = reader
 
+    @time_logger
     def Read(self):
         """Reads one message from the configured reader.
 
@@ -501,6 +502,7 @@ class FramedReader(object):
         while self._ReadFrame(message) > 0: pass
         return message.getvalue()
 
+    @time_logger
     def _ReadFrame(self, message):
         """Reads and appends one frame into the given message bytes.
 
@@ -522,6 +524,7 @@ class FramedReader(object):
             remaining -= len(data_bytes)
         return frame_size
 
+    @time_logger
     def _ReadInt32(self):
         encoded = self._reader.read(UINT32_BE.size)
         if len(encoded) != UINT32_BE.size:
@@ -535,6 +538,7 @@ class FramedWriter(object):
     def __init__(self, writer):
         self._writer = writer
 
+    @time_logger
     def Write(self, message):
         """Writes a message.
 
@@ -552,10 +556,12 @@ class FramedWriter(object):
         # A message is always terminated by a zero-length buffer.
         self._WriteUnsignedInt32(0)
 
+    @time_logger
     def _WriteBuffer(self, chunk):
         self._WriteUnsignedInt32(len(chunk))
         self._writer.write(chunk)
 
+    @time_logger
     def _WriteUnsignedInt32(self, uint32):
         self._writer.write(UINT32_BE.pack(uint32))
 
@@ -591,6 +597,7 @@ class Transceiver(object, metaclass=abc.ABCMeta):
         """
         pass
 
+    @time_logger
     def Transceive(self, request):
         """Processes a single request-reply interaction.
 
@@ -634,6 +641,7 @@ class HTTPTransceiver(Transceiver):
     def remote_name(self):
         return self._remote_name
 
+    @time_logger
     def ReadMessage(self):
         response = self._conn.getresponse()
         response_reader = FramedReader(response)
@@ -641,6 +649,7 @@ class HTTPTransceiver(Transceiver):
         response.read()  # ensure we're ready for subsequent requests
         return framed_message
 
+    @time_logger
     def WriteMessage(self, message):
         req_method = 'POST'
         req_headers = {'Content-Type': AVRO_RPC_MIME}
